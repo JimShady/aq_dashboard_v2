@@ -8,6 +8,7 @@ library(openair)
 ui <- dashboardPage(skin='red', # Start dashboardpage
   
   dashboardHeader( # Start dashboardheader
+    title = ("ERG Model Evaluator")
     
   ), # end dashboardheader
   
@@ -31,6 +32,9 @@ ui <- dashboardPage(skin='red', # Start dashboardpage
       
       tabItem(tabName = "csvupload1", # start First tab content
               h2('Model 1 CSV'),
+              
+              helpText('This app expects a CSV file formatted in a specific way. For an example please ',
+                       a("download this file", href="http://raw.githubusercontent.com/JimShady/simple_aq_dashboard/master/test_data.csv")),
               
               fluidRow( # start of row
               
@@ -59,8 +63,8 @@ ui <- dashboardPage(skin='red', # Start dashboardpage
                                        "Double Quote" = '"',
                                        "Single Quote" = "'"),
                            selected = '"')
-                ), # end of box
-              box(tableOutput("contents1"))
+                )#, # end of box
+              #box(tableOutput("contents1"))
               ##### end of CSV1 upload #####
               
               ) # end of  row
@@ -69,6 +73,9 @@ ui <- dashboardPage(skin='red', # Start dashboardpage
       
       tabItem(tabName = "csvupload2", # start second tab content
               h2('Model 2 CSV'),
+              
+              helpText('This app expects a CSV file formatted in a specific way. For an example please ',
+                       a("download this file", href="http://raw.githubusercontent.com/JimShady/simple_aq_dashboard/master/test_data.csv")),
               
               fluidRow( #start of row
               
@@ -96,8 +103,8 @@ ui <- dashboardPage(skin='red', # Start dashboardpage
                                        "Double Quote" = '"',
                                        "Single Quote" = "'"),
                            selected = '"')
-              ), # end of box
-              box(tableOutput("contents2"))
+              )#, # end of box
+              #box(tableOutput("contents2"))
               ##### end of CSV2 upload #####
               
               ) ## End of row
@@ -105,38 +112,53 @@ ui <- dashboardPage(skin='red', # Start dashboardpage
       ), # end second tab content
       
       tabItem(tabName = "results", # start third tab content
-              h2("Model comparisons"),
               
               fluidRow( # Start of a row
-                column(width=3,
+                
+                column(width=2,
                 box(width = NULL, title = 'Model Controls 1', status = 'primary', solidHeader = T,
                     uiOutput('file1pollutantselector'),
                     uiOutput('file1sitetypeselector'),
-                    uiOutput('file1sitecodeselector')),
-                box(width = NULL, title = "Model 1 Stats", tableOutput('table1')),
-                box(width = NULL, title = 'Model Controls 2', status = 'primary', solidHeader = T,
-                    uiOutput('file2pollutantselector'),
-                    uiOutput('file2sitetypeselector'),
-                    uiOutput('file2sitecodeselector')),
-                box(width = NULL, title = 'Model 2 Stats', tableOutput('table2'))
+                    uiOutput('file1sitecodeselector'))
                 ),
-                column(width=6,
-                box(width = NULL, title = "Model 1 Graph", 
+                
+                column(width=5,
+                box(width = NULL,  
                     plotOutput('graph1',
                     click = "plot_click1",
                     dblclick = "plot_dblclick1",
                     hover = "plot_hover1",
-                    brush = "plot_brush1")),
-                box(width = NULL, title = "Model 2 Graph",
-                    plotOutput('graph2',
-                    click = "plot_click2",
-                    dblclick = "plot_dblclick2",
-                    hover = "plot_hover2",
-                    brush = "plot_brush2"))
+                    brush = "plot_brush1",
+                    height = "350px"))
                 ),
-                column(width = 3)
-              ) # End of a row
-              
+                
+                column(width = 5,
+                       box(width = NULL, title = "Model 1 Stats", status = "warning", solidHeader = TRUE, tableOutput('table1')),
+                       box(width = NULL, title = "Model 1 Selection", status = "warning", solidHeader = TRUE, tableOutput('info1'))
+                       )
+              ), # End of a row
+              fluidRow(
+                column(width=2,
+                box(width = NULL, title = 'Model Controls 2', status = 'primary', solidHeader = T,
+                    uiOutput('file2pollutantselector'),
+                    uiOutput('file2sitetypeselector'),
+                    uiOutput('file2sitecodeselector'))
+                ),
+                column(width=5,
+                box(width = NULL,
+                    plotOutput('graph2',
+                               click = "plot_click2",
+                               dblclick = "plot_dblclick2",
+                               hover = "plot_hover2",
+                               brush = "plot_brush2",
+                               height = "350px"))
+                ),
+                column(width = 5,
+                box(width = NULL, title = 'Model 2 Stats', status = "warning", solidHeader = TRUE, tableOutput('table2')),
+                box(width = NULL, title = "Model 2 Selection", status = "warning", solidHeader = TRUE, tableOutput('info2'))
+                )
+                
+              )
       ) # end third tab content
     ) # End tab structure
     
@@ -197,7 +219,7 @@ server <- function(input, output) {
       rename_all(tolower) %>%
       gather(key = 'pollutant', value = 'modelled', 3:7) %>%
       mutate(sitetype = tolower(sitetype)) %>%
-      mutate(pollutant = gsub('model', '', as.character(pollutant)),
+      mutate(pollutant = gsub('model', '', pollutant),
             sitetype  = case_when(grepl('heathrow'          , sitetype) ~ 'Heathrow',
                                   grepl('traffic'           , sitetype) ~ 'Kerbside',
                                   grepl('kerbside'          , sitetype) ~ 'Kerbside',
@@ -207,12 +229,12 @@ server <- function(input, output) {
                                   grepl('urban background'  , sitetype) ~ 'Urban background'))
     })
     
-    model1measured <- reactive({ dataframe2() %>% 
+    model1measured <- reactive({ dataframe1() %>% 
       select(-SiteID, -month, -Year, -Type, -SiteName,- ModelNOx, -ModelNO2, -ModelPM10, -ModelPM25, -ModelO3) %>% 
       rename_all(tolower) %>%
       gather(key = 'pollutant', value = 'measured', 3:7) %>%
       mutate(sitetype = tolower(sitetype)) %>%
-      mutate(pollutant = gsub('measured', '', as.character(pollutant)),
+      mutate(pollutant = gsub('measured', '', pollutant),
              sitetype  = case_when(grepl('heathrow'          , sitetype) ~ 'Heathrow',
                                    grepl('traffic'           , sitetype) ~ 'Kerbside',
                                    grepl('kerbside'          , sitetype) ~ 'Kerbside',
@@ -227,7 +249,7 @@ server <- function(input, output) {
     table_data1 <- reactive({dataframe1() %>% rename_all(tolower) %>% select(-siteid, -month, -year, -type, -sitename)})
     
     output$file1pollutantselector <- renderUI({
-      selectInput("pollutant1", "pollutant:",  order(unique(as.character(data1()$pollutant))))
+      selectInput("pollutant1", "pollutant:",  sort(unique(as.character(data1()$pollutant))))
     })
     
     output$file1sitetypeselector <- renderUI({
@@ -250,28 +272,29 @@ server <- function(input, output) {
     
     ## Make the stats summary table
     output$table1 <-renderTable({
-      #filter(
-        data1() %>% #, 
-             #pollutant == input$pollutant, sitetype %in% input$sitetype & sitecode %in% input$sitecode) %>%
+      filter(
+        data1() , 
+             pollutant == input$pollutant1, sitetype %in% input$sitetype1 & sitecode %in% input$sitecode1) %>%
         modStats(mod = 'modelled',
                  obs = 'measured') %>%
         as_tibble() %>% select(-default)
       
-    }, align='l')
+    })
     
     output$graph1 <- renderPlot(
       {
-        ggplot(filter(data1(), pollutant == output$file1pollutantselector$pollutant1), aes(x = measured, y = modelled, label = sitecode, colour = sitetype)) + 
+        ggplot(filter(data1(), pollutant == input$pollutant1, sitetype %in% input$sitetype1 & sitecode %in% input$sitecode1),
+               aes(x = measured, y = modelled, label = sitecode, colour = sitetype)) +
           geom_point() +
           coord_fixed() +
           xlab('Measured') +
           ylab('Modelled') +
-          #xlim(-5,
-          #     max(c(filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype & sitecode %in% input$sitecode)$modelled,
-          #           filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype)$measured))) +
-          #ylim(-5,
-          #     max(c(filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype & sitecode %in% input$sitecode)$modelled,
-          #           filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype)$measured))) +
+          xlim(-5,
+               max(c(filter(data1(), pollutant == input$pollutant1, sitetype %in% input$sitetype1 & sitecode %in% input$sitecode1)$modelled,
+                    filter(data1(), pollutant == input$pollutant1, sitetype %in% input$sitetype1)$measured))) +
+          ylim(-5,
+               max(c(filter(data1(), pollutant == input$pollutant1, sitetype %in% input$sitetype1 & sitecode %in% input$sitecode1)$modelled,
+                     filter(data1(), pollutant == input$pollutant1, sitetype %in% input$sitetype1)$measured))) +
           theme(legend.title     = element_blank(),
                 panel.border     = element_blank(),
                 axis.title       = element_text(size=14, colour = 'black'),
@@ -282,15 +305,23 @@ server <- function(input, output) {
                 plot.margin      = unit(c(0,0,0,0), "cm"),
                 panel.spacing     = unit(c(-1,-1,-1,-1), "cm"),
                 axis.line        = element_line(colour='black'),
-                panel.background = element_rect(fill = 'black'),
+                panel.background = element_rect(fill = 'white'),
                 panel.grid.major = element_line(colour = 'grey'),
                 panel.grid.minor = element_blank()) +
-          geom_abline(intercept = 0, slope = 1, colour='white') + 
-          geom_abline(intercept = 0, slope = 2, linetype="dashed", colour='white') +
-          geom_abline(intercept = 0, slope = 0.5, linetype="dashed", colour='white') +
+          geom_abline(intercept = 0, slope = 1, colour='red') + 
+          geom_abline(intercept = 0, slope = 2, linetype="dashed", colour='red') +
+          geom_abline(intercept = 0, slope = 0.5, linetype="dashed", colour='red') +
           guides(guide_legend(ncol = 4))
         
       })
+    
+    output$info1 <- renderTable({
+      # With base graphics, need to tell it what the x and y variables are.
+      clicked_data <- brushedPoints(filter(data1(), pollutant == input$pollutant1, sitetype %in% input$sitetype1 & sitecode %in% input$sitecode1),
+                                    input$plot_brush1)
+      select(clicked_data, sitecode, sitetype, modelled, measured)
+      # nearPoints() also works with hover and dblclick events
+    })
     
     ### Now the same for file 2
     
@@ -329,7 +360,7 @@ server <- function(input, output) {
     table_data2 <- reactive({dataframe2() %>% rename_all(tolower) %>% select(-siteid, -month, -year, -type, -sitename)})
   
     output$file2pollutantselector <- renderUI({
-      selectInput("pollutant2", "pollutant:",  order(unique(as.character(data2()$pollutant))))
+      selectInput("pollutant2", "pollutant:",  sort(unique(as.character(data2()$pollutant))))
     })
     
     output$file2sitetypeselector <- renderUI({
@@ -352,28 +383,29 @@ server <- function(input, output) {
     
     ## Make the stats summary table
     output$table2 <-renderTable({
-      #filter(
-      data2() %>% #, 
-        #pollutant == input$pollutant, sitetype %in% input$sitetype & sitecode %in% input$sitecode) %>%
+      filter(
+      data2() , 
+        pollutant == input$pollutant2, sitetype %in% input$sitetype2 & sitecode %in% input$sitecode2) %>%
         modStats(mod = 'modelled',
                  obs = 'measured') %>%
         as_tibble() %>% select(-default)
       
-    }, align='l')
+    }, width='3cm')
     
     output$graph2 <- renderPlot(
       {
-        ggplot(data2(), aes(x = measured, y = modelled, label = sitecode, colour = sitetype)) + 
+        ggplot(filter(data2(), pollutant == input$pollutant2, sitetype %in% input$sitetype2 & sitecode %in% input$sitecode2),
+               aes(x = measured, y = modelled, label = sitecode, colour = sitetype)) +
           geom_point() +
           coord_fixed() +
           xlab('Measured') +
           ylab('Modelled') +
-          #xlim(-5,
-          #     max(c(filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype & sitecode %in% input$sitecode)$modelled,
-          #           filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype)$measured))) +
-          #ylim(-5,
-          #     max(c(filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype & sitecode %in% input$sitecode)$modelled,
-          #           filter(data, pollutant == input$pollutant, sitetype %in% input$sitetype)$measured))) +
+          xlim(-5,
+               max(c(filter(data2(), pollutant == input$pollutant2, sitetype %in% input$sitetype2 & sitecode %in% input$sitecode2)$modelled,
+                     filter(data2(), pollutant == input$pollutant2, sitetype %in% input$sitetype2)$measured))) +
+          ylim(-5,
+               max(c(filter(data2(), pollutant == input$pollutant2, sitetype %in% input$sitetype2 & sitecode %in% input$sitecode2)$modelled,
+                     filter(data2(), pollutant == input$pollutant2, sitetype %in% input$sitetype2)$measured))) +
           theme(legend.title     = element_blank(),
                 panel.border     = element_blank(),
                 axis.title       = element_text(size=14, colour = 'black'),
@@ -384,15 +416,23 @@ server <- function(input, output) {
                 plot.margin      = unit(c(0,0,0,0), "cm"),
                 panel.spacing     = unit(c(-1,-1,-1,-1), "cm"),
                 axis.line        = element_line(colour='black'),
-                panel.background = element_rect(fill = 'black'),
+                panel.background = element_rect(fill = 'white'),
                 panel.grid.major = element_line(colour = 'grey'),
                 panel.grid.minor = element_blank()) +
-          geom_abline(intercept = 0, slope = 1, colour='white') + 
-          geom_abline(intercept = 0, slope = 2, linetype="dashed", colour='white') +
-          geom_abline(intercept = 0, slope = 0.5, linetype="dashed", colour='white') +
+          geom_abline(intercept = 0, slope = 1, colour='red') + 
+          geom_abline(intercept = 0, slope = 2, linetype="dashed", colour='red') +
+          geom_abline(intercept = 0, slope = 0.5, linetype="dashed", colour='red') +
           guides(guide_legend(ncol = 4))
         
       })
+    
+    output$info2 <- renderTable({
+      # With base graphics, need to tell it what the x and y variables are.
+      clicked_data <- brushedPoints(filter(data2(), pollutant == input$pollutant2, sitetype %in% input$sitetype2 & sitecode %in% input$sitecode2),
+                                    input$plot_brush2)
+      select(clicked_data, sitecode, sitetype, modelled, measured)
+      # nearPoints() also works with hover and dblclick events
+    })
   
   
 }

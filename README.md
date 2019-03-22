@@ -1,2 +1,4 @@
 # Shiny air quality dashboard
-A simple dashboard for viewing modelled v. measured output data from the King's modelling team .... this time with added phwooar.
+A dashboard for viewing modelled v. measured output data from the King's modelling team. Accepts two model outputs uploaded as CSV files, then allows interaction and exploration of the data. Based on the tutorials avaiable here: (https://rstudio.github.io/shinydashboard/(['https://rstudio.github.io/shinydashboard/]') . Example image below
+
+![View of dashboard](dashboard.png)
