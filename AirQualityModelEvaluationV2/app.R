@@ -281,11 +281,14 @@ server <- function(input, output) {
       
     })
     
+    cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    
     output$graph1 <- renderPlot(
       {
         ggplot(filter(data1(), pollutant == input$pollutant1, sitetype %in% input$sitetype1 & sitecode %in% input$sitecode1),
                aes(x = measured, y = modelled, label = sitecode, colour = sitetype)) +
           geom_point() +
+          scale_colour_manual(values=cbbPalette) +
           coord_fixed() +
           xlab('Measured') +
           ylab('Modelled') +
@@ -397,6 +400,7 @@ server <- function(input, output) {
         ggplot(filter(data2(), pollutant == input$pollutant2, sitetype %in% input$sitetype2 & sitecode %in% input$sitecode2),
                aes(x = measured, y = modelled, label = sitecode, colour = sitetype)) +
           geom_point() +
+          scale_colour_manual(values=cbbPalette) +
           coord_fixed() +
           xlab('Measured') +
           ylab('Modelled') +
